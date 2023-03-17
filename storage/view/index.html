@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>OpenAI</title>
+
+    <link href="css/index.css" rel="stylesheet"/>
+</head>
+
+<style>
+    .container {
+        margin: 3vh;
+    }
+
+    .flex-center {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center
+    }
+
+    .role-radio {
+        margin: 5px;
+    }
+
+    .flex-center-row {
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        justify-content: center
+    }
+
+    [v-cloak] {
+        display: none !important;
+    }
+</style>
+<script src="client/localStorage.js"></script>
+<script src="client/axios_min.js"></script>
+<script src="client/api.js"></script>
+<script src="client/Req.js"></script>
+<script src="client/vue.js"></script>
+<script src="client/vant.min.js"></script>
+<body>
+<div class="container flex-center" id="app">
+    <h1>OpenAI</h1>
+    <br>
+    <van-form @submit="chat">
+        <div id="input-container" v-for="(context_info,index) in context">
+            <div class="flex-center-row">
+                <div class="input-row">
+                    <van-field :name="'role[' + index + ']'" label="Role" size="large" required>
+                        <template #input>
+                            <van-radio-group v-model="context_info.role">
+                                <van-radio class="role-radio" name="system">System</van-radio>
+                                <van-radio class="role-radio" name="assistant">Assistant</van-radio>
+                                <van-radio class="role-radio" name="user">User</van-radio>
+                            </van-radio-group>
+                        </template>
+                    </van-field>
+                </div>
+                <div>
+                    <van-field
+                            v-model="context_info.content"
+                            rows="1"
+                            size="large"
+                            :name="'content[' + index + ']'"
+                            style="width: 30vw"
+                            autosize
+                            label="Content"
+                            type="textarea"
+                            maxlength="2048"
+                            placeholder="input content"
+                            show-word-limit
+                            :required="true"
+                            :rules="[{ required: true, message: 'input or delete' }]"
+                    >
+                    </van-field>
+                </div>
+                <div>
+                    <van-button size="small" @click.stop.prevent="minus(index)" type="danger">-</van-button>
+                    <van-button size="small" @click.stop.prevent="insert(index)" type="info">+</van-button>
+                </div>
+            </div>
+        </div>
+        <!-- 添加按钮 -->
+        <div class="flex-center" style="margin: 16px;">
+            <van-button round :loading="isRequesting" :disabled="isRequesting" style="width: 10vw" type="info"
+                        native-type="submit">提交
+            </van-button>
+        </div>
+    </van-form>
+</div>
+
+<script>
+    const BASE_URL = window.location.protocol + "//" + window.location.host;
+    const API_URL = {
+        INIT: BASE_URL + '/init',
+        CHAT: BASE_URL + '/chat',
+    };
+    let app = new Vue({
+        el: '#app',
+        data: {
+            store: new localStorage,
+            context: [],
+            isRequesting: false
+        },
+        created() {
+            this.init();
+        },
+        methods: {
+            async init() {
+                await this.loadContext();
+            },
+            async loadContext() {
+                let context = this.store.get('context');
+                if (!context) {
+                    context = await this.getContextInitContext();
+                } else {
+                    context = JSON.parse(context);
+                }
+                console.log(context)
+                this.context = context;
+            },
+            async getContextInitContext() {
+                return await Req.query(API_URL.INIT);
+            },
+            async chat(data) {
+                this.isRequesting = true;
+                console.log(data);
+                let context = [];
+                let count = Object.keys(data).length / 2;
+                for (let i = 0; i < count; i++) {
+                    context.push({
+                        'role': data["role[" + i + "]"],
+                        'content': data["content[" + i + "]"],
+                    });
+                }
+                let info = await Req.post(API_URL.CHAT, {context: context,}, {}, true);
+                this.isRequesting = false;
+                if (info.code === 200) {
+                    return this.saveContext(info.data);
+                } else if (info.code === 500) {
+                    console.error(info)
+                    return this.showError(info.data.msg);
+                } else {
+                    console.error(info)
+                    return this.showError(info.msg);
+                }
+            },
+            saveContext(context) {
+                this.store.set('context', JSON.stringify(context));
+                this.context = context;
+            },
+            showError(msg) {
+                vant.Toast.fail(msg)
+            },
+            minus(index) {
+                this.context.splice(index, 1);
+            },
+            insert(index) {
+                this.context.splice(index + 1, 0, {
+                    'role': 'user',
+                    'content': ''
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>
