@@ -29,12 +29,10 @@ class ResourceMiddleware implements MiddlewareInterface
     {
         /** @var Dispatched $dispatched */
         $dispatched = $request->getAttribute(Dispatched::class);
-        var_dump($dispatched);
         if ($dispatched->status) {
             return $handler->handle($request);
         }
         $path = $request->getUri()->getPath();
-        var_dump($path);
         if (Str::contains($path, '.')) {
             $file = $this->direction . $path;
             if (is_file($file)) {

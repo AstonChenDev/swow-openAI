@@ -92,10 +92,11 @@
 </div>
 
 <script>
-    const BASE_URL = window.location.protocol + "//" + window.location.host;
+
+    const BASE_URL = window.location.protocol + "//" + window.location.href;
     const API_URL = {
-        INIT: BASE_URL + '/init',
-        CHAT: BASE_URL + '/chat',
+        INIT: BASE_URL + 'init',
+        CHAT: BASE_URL + 'chat',
     };
     let app = new Vue({
         el: '#app',
