@@ -45,6 +45,6 @@ class IndexController extends AbstractController
     #[PostMapping(path: "/chat")]
     public function chat(): array
     {
-        return $this->chatService->chat($this->request->post('context'), $this->request->post('temperature', 0));
+        return $this->chatService->chat($this->request->post('context'), (float)$this->request->post('temperature', 1));
     }
 }

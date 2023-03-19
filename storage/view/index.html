@@ -44,6 +44,10 @@
 <div class="container flex-center" id="app">
     <h1>OpenAI</h1>
     <br>
+    <div>
+        <van-field name="temperature" v-model="temperature" type="number" label="temperature"
+                   placeholder="请输入temperature"></van-field>
+    </div>
     <van-form @submit="chat">
         <div id="input-container" v-for="(context_info,index) in context">
             <div class="flex-center-row">
@@ -102,6 +106,7 @@
         el: '#app',
         data: {
             store: new localStorage,
+            temperature: 1,
             context: [],
             isRequesting: false
         },
@@ -136,7 +141,7 @@
                         'content': data["content[" + i + "]"],
                     });
                 }
-                let info = await Req.post(API_URL.CHAT, {context: context,}, {}, true);
+                let info = await Req.post(API_URL.CHAT, {context: context, temperature: this.temperature}, {}, true);
                 this.isRequesting = false;
                 if (info.code === 200) {
                     return this.saveContext(info.data);
